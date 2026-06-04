@@ -38,10 +38,10 @@ def main():
         with open("output.txt", "w", encoding="utf-8") as f:
             f.write("Learning Wise Web Application Test Results\n")
             f.write("=" * 50 + "\n")
-            f.write("✓ App created successfully\n")
-            f.write("✓ Index route working\n")
-            f.write("✓ Sum API endpoint working\n")
-            f.write("✓ All tests passed\n")
+            f.write("[PASS] App created successfully\n")
+            f.write("[PASS] Index route working\n")
+            f.write("[PASS] Sum API endpoint working\n")
+            f.write("[PASS] All tests passed\n")
         
         return 0
         
