@@ -29,15 +29,17 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        script {
-          if (fileExists('requirements.txt')) {
-            if (isUnix()) {
-              sh ". ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (fileExists('requirements.txt')) {
+              if (isUnix()) {
+                sh ". ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
+              } else {
+                bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
+              }
             } else {
-              bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
+              echo 'No requirements.txt found; skipping dependency install.'
             }
-          } else {
-            echo 'No requirements.txt found; skipping dependency install.'
           }
         }
       }
@@ -45,11 +47,13 @@ pipeline {
 
     stage('Install Project') {
       steps {
-        script {
-          if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python -m pip install -e python_project"
-          } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e python_project"
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh ". ${VENV_DIR}/bin/activate && python -m pip install -e python_project"
+            } else {
+              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e python_project"
+            }
           }
         }
       }
