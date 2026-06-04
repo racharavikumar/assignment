@@ -15,13 +15,15 @@ pipeline {
 
     stage('Setup Environment') {
       steps {
-        script {
-          if (isUnix()) {
-            sh "${PYTHON} -m venv ${VENV_DIR}"
-            sh ". ${VENV_DIR}/bin/activate && pip install --upgrade pip"
-          } else {
-            bat "${PYTHON} -m venv ${VENV_DIR}"
-            bat "${VENV_DIR}\\Scripts\\pip.exe install --upgrade pip"
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh "${PYTHON} -m venv ${VENV_DIR}"
+              sh ". ${VENV_DIR}/bin/activate && pip install --upgrade pip"
+            } else {
+              bat "${PYTHON} -m venv ${VENV_DIR}"
+              bat "${VENV_DIR}\\Scripts\\pip.exe install --upgrade pip"
+            }
           }
         }
       }
