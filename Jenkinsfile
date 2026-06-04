@@ -87,19 +87,7 @@ pipeline {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
           archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
-          script {
-            try {
-              publishHTML(target: [
-                reportDir: 'htmlcov',
-                reportFiles: 'index.html',
-                reportName: 'Coverage Report',
-                keepAll: true,
-                alwaysLinkToLastBuild: true
-              ])
-            } catch (err) {
-              echo 'publishHTML step is unavailable; coverage HTML archived instead.'
-            }
-          }
+          echo 'Coverage HTML archived as build artifacts. Install the HTML Publisher plugin to view it directly in Jenkins.'
         }
       }
     }
@@ -178,19 +166,7 @@ pipeline {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
           archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
-          script {
-            try {
-              publishHTML(target: [
-                reportDir: 'htmlcov',
-                reportFiles: 'index.html',
-                reportName: 'Coverage Report',
-                keepAll: true,
-                alwaysLinkToLastBuild: true
-              ])
-            } catch (err) {
-              echo 'publishHTML step is unavailable; coverage HTML archived instead.'
-            }
-          }
+          echo 'Coverage HTML archived as build artifacts. Install the HTML Publisher plugin to view it directly in Jenkins.'
         }
       }
     }
