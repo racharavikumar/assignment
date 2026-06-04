@@ -1,44 +1,5 @@
 pipeline {
   agent any
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
-    stage('Install dependencies') {
-      when { expression { fileExists('requirements.txt') } }
-      steps {
-        script {
-          if (isUnix()) {
-            sh 'python -m venv venv && . venv/bin/activate && pip install -r requirements.txt'
-          } else {
-            bat 'python -m venv venv && venv\\Scripts\\activate && pip install -r requirements.txt'
-          }
-        }
-      }
-    }
-    stage('Test') {
-      steps {
-        script {
-          if (isUnix()) {
-            sh 'pytest -q'
-          } else {
-            bat 'pytest -q'
-          }
-        }
-      }
-    }
-  }
-  post {
-    always {
-      archiveArtifacts artifacts: '**/dist/**, **/*.whl, **/target/**', allowEmptyArchive: true
-      junit allowEmptyResults: true, testResults: '**/junit-*.xml'
-    }
-  }
-}
-pipeline {
-  agent any
 
   environment {
     PYTHON = 'python'
@@ -89,6 +50,18 @@ pipeline {
             sh ". ${VENV_DIR}/bin/activate && python -m pip install -e python_project"
           } else {
             bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e python_project"
+          }
+        }
+      }
+    }
+
+    stage('Run sample_script.py') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh ". ${VENV_DIR}/bin/activate && python sample_script.py"
+          } else {
+            bat "${VENV_DIR}\\Scripts\\python.exe sample_script.py"
           }
         }
       }
