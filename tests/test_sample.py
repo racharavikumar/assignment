@@ -1,32 +1,48 @@
-"""Tests for sample_script.py"""
+"""Tests for Learning Wise web application."""
 
-import sys
-import os
-
-# Add parent directory to path so we can import sample_script
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from sample_script import main
+import pytest
+from learning_wise import create_app
 
 
-def test_main_returns_zero():
-    """Test that main() returns 0 on success."""
-    result = main()
-    assert result == 0, "main() should return 0"
-
-
-def test_output_file_created(tmp_path, monkeypatch):
-    """Test that output.txt is created."""
-    # Change to temp directory
-    monkeypatch.chdir(tmp_path)
+@pytest.fixture
+def client():
+    """Create a test client for the Flask app."""
+    app = create_app()
+    app.config['TESTING'] = True
     
-    # Run main
-    result = main()
-    
-    # Check output file exists
-    output_file = tmp_path / "output.txt"
-    assert output_file.exists(), "output.txt should be created"
-    
-    # Check content
-    content = output_file.read_text()
-    assert "Sum=15" in content, "output.txt should contain Sum=15"
+    with app.test_client() as client:
+        yield client
+
+
+def test_index_route(client):
+    """Test the index route returns expected response."""
+    response = client.get('/')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['message'] == 'Learning Wise API'
+    assert data['status'] == 'running'
+
+
+def test_sum_route_basic(client):
+    """Test the sum endpoint with n=5."""
+    response = client.get('/api/sum/5')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['n'] == 5
+    assert data['sum'] == 15  # 1+2+3+4+5 = 15
+
+
+def test_sum_route_zero(client):
+    """Test the sum endpoint with n=0."""
+    response = client.get('/api/sum/0')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['sum'] == 0
+
+
+def test_sum_route_large(client):
+    """Test the sum endpoint with a larger number."""
+    response = client.get('/api/sum/100')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['sum'] == 5050  # Sum of 1 to 100

@@ -33,19 +33,10 @@ pipeline {
       steps {
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
           script {
-            if (fileExists('requirements.txt')) {
-              if (isUnix()) {
-                sh ". ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
-              } else {
-                bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
-              }
+            if (isUnix()) {
+              sh ". ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
             } else {
-              echo 'No requirements.txt found; installing pytest for test execution.'
-              if (isUnix()) {
-                sh ". ${VENV_DIR}/bin/activate && pip install pytest"
-              } else {
-                bat "${VENV_DIR}\\Scripts\\python.exe -m pip install pytest"
-              }
+              bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
             }
           }
         }
@@ -57,9 +48,9 @@ pipeline {
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
           script {
             if (isUnix()) {
-              sh ". ${VENV_DIR}/bin/activate && python -m pip install -e python_project"
+              sh ". ${VENV_DIR}/bin/activate && python -m pip install -e ."
             } else {
-              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e python_project"
+              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e ."
             }
           }
         }
