@@ -21,6 +21,7 @@ pipeline {
             try {
               sh 'docker --version'
               env.DOCKER_AVAILABLE = 'true'
+              echo 'Docker available on this agent; using Docker pipeline.'
             } catch (err) {
               env.DOCKER_AVAILABLE = 'false'
               echo 'Docker not available on this agent; falling back to native Python execution.'
@@ -29,6 +30,7 @@ pipeline {
             try {
               bat 'docker --version'
               env.DOCKER_AVAILABLE = 'true'
+              echo 'Docker available on this agent; using Docker pipeline.'
             } catch (err) {
               env.DOCKER_AVAILABLE = 'false'
               echo 'Docker not available on this agent; falling back to native Python execution.'
@@ -85,6 +87,19 @@ pipeline {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
           archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
+          script {
+            try {
+              publishHTML(target: [
+                reportDir: 'htmlcov',
+                reportFiles: 'index.html',
+                reportName: 'Coverage Report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true
+              ])
+            } catch (err) {
+              echo 'publishHTML step is unavailable; coverage HTML archived instead.'
+            }
+          }
         }
       }
     }
@@ -109,17 +124,19 @@ pipeline {
         expression { env.DOCKER_AVAILABLE != 'true' }
       }
       steps {
-        script {
-          if (isUnix()) {
-            sh 'python -m venv .venv'
-            sh '. .venv/bin/activate && pip install --upgrade pip'
-            sh '. .venv/bin/activate && pip install -r requirements.txt'
-            sh '. .venv/bin/activate && python -m pip install -e .'
-          } else {
-            bat 'python -m venv .venv'
-            bat '.venv\\Scripts\\pip.exe install --upgrade pip'
-            bat '.venv\\Scripts\\pip.exe install -r requirements.txt'
-            bat '.venv\\Scripts\\python.exe -m pip install -e .'
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh 'python -m venv .venv'
+              sh '. .venv/bin/activate && pip install --upgrade pip'
+              sh '. .venv/bin/activate && pip install -r requirements.txt'
+              sh '. .venv/bin/activate && python -m pip install -e .'
+            } else {
+              bat 'python -m venv .venv'
+              bat '.venv\\Scripts\\pip.exe install --upgrade pip'
+              bat '.venv\\Scripts\\pip.exe install -r requirements.txt'
+              bat '.venv\\Scripts\\python.exe -m pip install -e .'
+            }
           }
         }
       }
@@ -130,11 +147,13 @@ pipeline {
         expression { env.DOCKER_AVAILABLE != 'true' }
       }
       steps {
-        script {
-          if (isUnix()) {
-            sh '. .venv/bin/activate && python sample_script.py'
-          } else {
-            bat '.venv\\Scripts\\python.exe sample_script.py'
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh '. .venv/bin/activate && python sample_script.py'
+            } else {
+              bat '.venv\\Scripts\\python.exe sample_script.py'
+            }
           }
         }
       }
@@ -145,11 +164,13 @@ pipeline {
         expression { env.DOCKER_AVAILABLE != 'true' }
       }
       steps {
-        script {
-          if (isUnix()) {
-            sh '. .venv/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
-          } else {
-            bat '.venv\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh '. .venv/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
+            } else {
+              bat '.venv\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
+            }
           }
         }
       }
@@ -157,6 +178,19 @@ pipeline {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
           archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
+          script {
+            try {
+              publishHTML(target: [
+                reportDir: 'htmlcov',
+                reportFiles: 'index.html',
+                reportName: 'Coverage Report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true
+              ])
+            } catch (err) {
+              echo 'publishHTML step is unavailable; coverage HTML archived instead.'
+            }
+          }
         }
       }
     }
