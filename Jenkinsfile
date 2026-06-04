@@ -23,6 +23,8 @@ pipeline {
               env.DOCKER_AVAILABLE = 'true'
               echo 'Docker available on this agent; using Docker pipeline.'
             } catch (err) {
+              sh 'command -v docker || true'
+              sh 'echo PATH=$PATH'
               env.DOCKER_AVAILABLE = 'false'
               echo 'Docker not available on this agent; falling back to native Python execution.'
             }
@@ -32,6 +34,8 @@ pipeline {
               env.DOCKER_AVAILABLE = 'true'
               echo 'Docker available on this agent; using Docker pipeline.'
             } catch (err) {
+              bat 'where docker || echo docker not found'
+              bat 'echo %PATH%'
               env.DOCKER_AVAILABLE = 'false'
               echo 'Docker not available on this agent; falling back to native Python execution.'
             }
