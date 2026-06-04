@@ -40,7 +40,12 @@ pipeline {
                 bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
               }
             } else {
-              echo 'No requirements.txt found; skipping dependency install.'
+              echo 'No requirements.txt found; installing pytest for test execution.'
+              if (isUnix()) {
+                sh ". ${VENV_DIR}/bin/activate && pip install pytest"
+              } else {
+                bat "${VENV_DIR}\\Scripts\\python.exe -m pip install pytest"
+              }
             }
           }
         }
