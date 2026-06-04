@@ -1,11 +1,6 @@
 pipeline {
   agent any
 
-  environment {
-    PYTHON = 'python'
-    VENV_DIR = '.venv'
-  }
-
   stages {
     stage('Checkout') {
       steps {
@@ -13,45 +8,13 @@ pipeline {
       }
     }
 
-    stage('Setup Environment') {
+    stage('Build Docker Image') {
       steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-          script {
-            if (isUnix()) {
-              sh "${PYTHON} -m venv ${VENV_DIR}"
-              sh ". ${VENV_DIR}/bin/activate && pip install --upgrade pip"
-            } else {
-              bat "${PYTHON} -m venv ${VENV_DIR}"
-              bat "${VENV_DIR}\\Scripts\\pip.exe install --upgrade pip"
-            }
-          }
-        }
-      }
-    }
-
-    stage('Install Dependencies') {
-      steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-          script {
-            if (isUnix()) {
-              sh ". ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
-            } else {
-              bat "${VENV_DIR}\\Scripts\\pip.exe install -r requirements.txt"
-            }
-          }
-        }
-      }
-    }
-
-    stage('Install Project') {
-      steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-          script {
-            if (isUnix()) {
-              sh ". ${VENV_DIR}/bin/activate && python -m pip install -e ."
-            } else {
-              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install -e ."
-            }
+        script {
+          if (isUnix()) {
+            sh 'docker build -t learning-wise:${BUILD_NUMBER} .' 
+          } else {
+            bat 'docker build -t learning-wise:%BUILD_NUMBER% .'
           }
         }
       }
@@ -61,9 +24,9 @@ pipeline {
       steps {
         script {
           if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python sample_script.py"
+            sh 'docker run --rm -v "${WORKSPACE}:/app" learning-wise:${BUILD_NUMBER} python sample_script.py'
           } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe sample_script.py"
+            bat 'docker run --rm -v "%WORKSPACE%:/app" learning-wise:%BUILD_NUMBER% python sample_script.py'
           }
         }
       }
@@ -73,9 +36,9 @@ pipeline {
       steps {
         script {
           if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
+            sh 'docker run --rm -v "${WORKSPACE}:/app" learning-wise:${BUILD_NUMBER} python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
           } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
+            bat 'docker run --rm -v "%WORKSPACE%:/app" learning-wise:%BUILD_NUMBER% python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml'
           }
         }
       }
@@ -89,15 +52,11 @@ pipeline {
 
     stage('Build Package') {
       steps {
-        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-          script {
-            if (isUnix()) {
-              sh ". ${VENV_DIR}/bin/activate && python -m pip install --upgrade build"
-              sh ". ${VENV_DIR}/bin/activate && python -m build --wheel --outdir dist"
-            } else {
-              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install --upgrade build"
-              bat "${VENV_DIR}\\Scripts\\python.exe -m build --wheel --outdir dist"
-            }
+        script {
+          if (isUnix()) {
+            sh 'docker run --rm -v "${WORKSPACE}:/app" learning-wise:${BUILD_NUMBER} python -m pip install --upgrade build && python -m build --wheel --outdir dist'
+          } else {
+            bat 'docker run --rm -v "%WORKSPACE%:/app" learning-wise:%BUILD_NUMBER% python -m pip install --upgrade build && python -m build --wheel --outdir dist'
           }
         }
       }
