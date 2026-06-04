@@ -7,6 +7,7 @@ Exit code 0 on success.
 
 import sys
 import json
+import io
 
 
 def main():
@@ -23,30 +24,36 @@ def main():
             response = client.get('/')
             assert response.status_code == 200
             data = response.get_json()
-            print(f"  Index: {data}")
+            print("  Index: PASS - {}".format(data))
             
             # Test sum endpoint
             response = client.get('/api/sum/5')
             assert response.status_code == 200
             data = response.get_json()
-            print(f"  Sum endpoint: {data}")
+            print("  Sum endpoint: PASS - {}".format(data))
             assert data['sum'] == 15
             
-        print("✓ All endpoint tests passed!")
+        print("All endpoint tests passed!")
         
-        # Write summary to output.txt
-        with open("output.txt", "w", encoding="utf-8") as f:
-            f.write("Learning Wise Web Application Test Results\n")
-            f.write("=" * 50 + "\n")
-            f.write("[PASS] App created successfully\n")
-            f.write("[PASS] Index route working\n")
-            f.write("[PASS] Sum API endpoint working\n")
-            f.write("[PASS] All tests passed\n")
+        # Write summary to output.txt with explicit encoding
+        output_content = """Learning Wise Web Application Test Results
+==================================================
+[PASS] App created successfully
+[PASS] Index route working
+[PASS] Sum API endpoint working
+[PASS] All tests passed
+"""
         
+        with io.open("output.txt", "w", encoding="utf-8") as f:
+            f.write(output_content)
+        
+        print("Results written to output.txt")
         return 0
         
     except Exception as e:
-        print(f"Error: {e}")
+        print("Error: {}".format(str(e)))
+        import traceback
+        traceback.print_exc()
         return 1
 
 

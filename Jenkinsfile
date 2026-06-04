@@ -73,15 +73,21 @@ pipeline {
       steps {
         script {
           if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml"
+            sh ". ${VENV_DIR}/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
           } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml"
+            bat "${VENV_DIR}\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
           }
         }
       }
       post {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
+          publishHTML([
+            reportDir: 'htmlcov',
+            reportFiles: 'index.html',
+            reportName: 'Coverage Report',
+            keepAll: true
+          ])
         }
       }
     }
