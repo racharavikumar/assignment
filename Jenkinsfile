@@ -82,12 +82,7 @@ pipeline {
       post {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
-          publishHTML([
-            reportDir: 'htmlcov',
-            reportFiles: 'index.html',
-            reportName: 'Coverage Report',
-            keepAll: true
-          ])
+          archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
         }
       }
     }
