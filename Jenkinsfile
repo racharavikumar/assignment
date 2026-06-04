@@ -82,28 +82,30 @@ pipeline {
       steps {
         script {
           if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python -m pytest -q"
+            sh ". ${VENV_DIR}/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml"
           } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe -m pytest -q"
+            bat "${VENV_DIR}\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml"
           }
         }
       }
       post {
         always {
-          junit allowEmptyResults: true, testResults: 'tests/**/*.xml'
+          junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
         }
       }
     }
 
     stage('Build Package') {
       steps {
-        script {
-          if (isUnix()) {
-            sh ". ${VENV_DIR}/bin/activate && python -m pip install --upgrade build"
-            sh ". ${VENV_DIR}/bin/activate && python -m build --wheel --outdir dist"
-          } else {
-            bat "${VENV_DIR}\\Scripts\\python.exe -m pip install --upgrade build"
-            bat "${VENV_DIR}\\Scripts\\python.exe -m build --wheel --outdir dist"
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          script {
+            if (isUnix()) {
+              sh ". ${VENV_DIR}/bin/activate && python -m pip install --upgrade build"
+              sh ". ${VENV_DIR}/bin/activate && python -m build --wheel --outdir dist"
+            } else {
+              bat "${VENV_DIR}\\Scripts\\python.exe -m pip install --upgrade build"
+              bat "${VENV_DIR}\\Scripts\\python.exe -m build --wheel --outdir dist"
+            }
           }
         }
       }
