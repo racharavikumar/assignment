@@ -8,9 +8,7 @@ pipeline {
 
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Detect Docker') {
@@ -21,7 +19,6 @@ pipeline {
             try {
               sh 'docker --version'
               dockerAvailable = true
-              echo 'Docker available on Unix agent.'
             } catch (err) {
               echo 'Docker not available on Unix agent.'
             }
@@ -29,7 +26,6 @@ pipeline {
             try {
               bat 'docker --version'
               dockerAvailable = true
-              echo 'Docker available on Windows agent.'
             } catch (err) {
               echo 'Docker not available on Windows agent.'
             }
@@ -49,13 +45,13 @@ pipeline {
             if (isUnix()) {
               sh '''
                 python -m venv .venv
-                . .venv/bin/activate && pip install --upgrade pip
+                . .venv/bin/activate && python -m pip install --upgrade pip
                 . .venv/bin/activate && pip install -r requirements.txt
                 . .venv/bin/activate && python -m pip install -e .
               '''
             } else {
               bat "python -m venv .venv"
-              bat ".venv\\Scripts\\pip.exe install --upgrade pip"
+              bat ".venv\\Scripts\\python.exe -m pip install --upgrade pip"
               bat ".venv\\Scripts\\pip.exe install -r requirements.txt"
               bat ".venv\\Scripts\\python.exe -m pip install -e ."
             }
