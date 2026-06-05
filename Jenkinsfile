@@ -16,11 +16,12 @@ pipeline {
     stage('Detect Docker') {
       steps {
         script {
-          dockerAvailable = false
+          def dockerAvailable = false
           if (isUnix()) {
             try {
               sh 'docker --version'
               dockerAvailable = true
+              echo 'Docker available on Unix agent.'
             } catch (err) {
               echo 'Docker not available on Unix agent.'
             }
@@ -28,24 +29,57 @@ pipeline {
             try {
               bat 'docker --version'
               dockerAvailable = true
+              echo 'Docker available on Windows agent.'
             } catch (err) {
               echo 'Docker not available on Windows agent.'
             }
           }
-          // Save result for later stages
           env.DOCKER_AVAILABLE = dockerAvailable ? 'true' : 'false'
         }
       }
     }
 
-    stage('Build Docker Image') {
-      when { expression { env.DOCKER_AVAILABLE == 'true' } }
+    stage('Setup Environment') {
       steps {
         script {
-          if (isUnix()) {
-            sh "docker build -t learning-wise:${BUILD_NUMBER} ."
+          if (env.DOCKER_AVAILABLE == 'true') {
+            echo 'Skipping venv setup, Docker will be used.'
           } else {
-            bat "docker build -t learning-wise:%BUILD_NUMBER% ."
+            echo 'Setting up native Python venv...'
+            if (isUnix()) {
+              sh '''
+                python -m venv .venv
+                . .venv/bin/activate && pip install --upgrade pip
+                . .venv/bin/activate && pip install -r requirements.txt
+                . .venv/bin/activate && python -m pip install -e .
+              '''
+            } else {
+              bat "python -m venv .venv"
+              bat ".venv\\Scripts\\pip.exe install --upgrade pip"
+              bat ".venv\\Scripts\\pip.exe install -r requirements.txt"
+              bat ".venv\\Scripts\\python.exe -m pip install -e ."
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build Image or Package') {
+      steps {
+        script {
+          if (env.DOCKER_AVAILABLE == 'true') {
+            if (isUnix()) {
+              sh "docker build -t learning-wise:${BUILD_NUMBER} ."
+            } else {
+              bat "docker build -t learning-wise:%BUILD_NUMBER% ."
+            }
+          } else {
+            if (isUnix()) {
+              sh ". .venv/bin/activate && python -m pip install --upgrade build && python -m build --wheel --outdir dist"
+            } else {
+              bat ".venv\\Scripts\\python.exe -m pip install --upgrade build"
+              bat ".venv\\Scripts\\python.exe -m build --wheel --outdir dist"
+            }
           }
         }
       }
@@ -76,15 +110,15 @@ pipeline {
         script {
           if (env.DOCKER_AVAILABLE == 'true') {
             if (isUnix()) {
-              sh "docker run --rm -v ${WORKSPACE}:/app learning-wise:${BUILD_NUMBER} python -m pytest -q --junit-xml=tests/junit-results.xml"
+              sh "docker run --rm -v ${WORKSPACE}:/app learning-wise:${BUILD_NUMBER} python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
             } else {
-              bat "docker run --rm -v %WORKSPACE%:/app learning-wise:%BUILD_NUMBER% python -m pytest -q --junit-xml=tests/junit-results.xml"
+              bat "docker run --rm -v %WORKSPACE%:/app learning-wise:%BUILD_NUMBER% python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
             }
           } else {
             if (isUnix()) {
-              sh ". .venv/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml"
+              sh ". .venv/bin/activate && python -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
             } else {
-              bat ".venv\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml"
+              bat ".venv\\Scripts\\python.exe -m pytest -q --junit-xml=tests/junit-results.xml --cov=learning_wise --cov-report=html --cov-report=xml"
             }
           }
         }
@@ -92,6 +126,7 @@ pipeline {
       post {
         always {
           junit allowEmptyResults: true, testResults: 'tests/junit-results.xml'
+          archiveArtifacts artifacts: 'htmlcov/**, coverage.xml', allowEmptyArchive: true
         }
       }
     }
